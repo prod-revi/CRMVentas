@@ -17,10 +17,11 @@ const crearToken = (usuario, secreta, expiresIn) => {
 // Resolvers
 const resolvers = {
   Query: {
-    obtenerUsuario: async (_, {token}) => {
-      const UsuarioId = await jwt.verify(token, process.env.SECRETA)
+    obtenerUsuario: async (_, {}, ctx) => {
+      // const UsuarioId = await jwt.verify(token, process.env.SECRETA)
+      // console.log(ctx)
 
-      return UsuarioId;
+      return ctx.usuario;
     },
     obtenerProductos: async () => {
       try {
@@ -81,7 +82,7 @@ const resolvers = {
     },
     obtenerPedidosVendedor: async (_, {}, ctx) => {
       try {
-        const pedidos = await Pedido.find({ vendedor: ctx.usuario.id });
+        const pedidos = await Pedido.find({ vendedor: ctx.usuario.id }).populate('cliente');
         return pedidos;
       } catch (error) {
         console.log(error);
@@ -112,18 +113,23 @@ const resolvers = {
         { $match : { estado : "COMPLETADO" } },
         { $group : {
           _id : "$cliente",
-          total: { $sum: "$total" }
+          total: { $sum: '$total' }
         }},
         {
           $lookup: {
-            from: "clientes",
-            localField: "_id",
+            from: 'clientes',
+            localField: '_id',
             foreignField: "_id",
             as: "cliente"
           }
+        },
+        {
+          $limit: 10
+        },
+        {
+          $sort : { total : -1 }
         }
       ]);
-
       return clientes;
     },
     mejoresVendedores: async () => {
@@ -242,14 +248,14 @@ const resolvers = {
       return "Producto Eliminado";
     },
     nuevoCliente: async (_, {input}, ctx) => {
+      
+      // console.log(ctx);
       const {email} = input;
 
       // Verificar si el cliente ya esta regsitrado
-      console.log(ctx);
-
       const cliente = Cliente.findOne({ email });
 
-      if (!cliente) {
+      if (cliente) {
         throw new Error('Ese Cliente ya esta registrado');
       }
 

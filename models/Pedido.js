@@ -21,7 +21,7 @@ const ProductoSchema = mongoose.Schema({
   },
   estado: {
     type: String,
-    default: "PENDIENDTE"
+    default: "PENDIENTE"
   },
   creado: {
     type: Date,
